@@ -14,11 +14,6 @@ variable "debian_filename" {
   description = "The filename of the tarball to produce"
 }
 
-variable "config_file" {
-    type = string
-    default = "official-preseed.txt"
-}
-
 variable "name" {
   type    = string
   default = "debian"
@@ -44,14 +39,14 @@ variable "ovmfvars" {
   default = "/usr/share/OVMF/OVMF_VARS.fd"
 }
 
-var "user" {
+variable "user" {
   type = string
   default = "test"
 }
 
-var "password" {
+variable "password" {
   type = string
-  default = test
+  default = "test"
 }
 
 source "qemu" "debian" {
@@ -61,7 +56,7 @@ source "qemu" "debian" {
     "<enter><wait>",
     "<down><down><down><down><down><enter>",
     "<wait1m>",
-    "http://{{ .HTTPIP }}:{{ .HTTPPort }}/${var.config_file}<enter>"
+    "http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.txt<enter>"
 
   ]
   boot_wait       = "10s"
@@ -69,7 +64,16 @@ source "qemu" "debian" {
   disk_size       = "12G"
   format          = "raw"
   headless        = "true"
-  http_directory  = "http"
+
+  #http_directory  = "http"
+  http_content = {
+    "/preseed.txt" = templatefile("${path.root}/http/preseed-template.pkrtpl", 
+    {
+      user = var.user
+      password = var.password
+    })
+  }
+
 
   ### MUST BE CHANGED TO RELEVANT DEBIAN CONFIG ### 
 
