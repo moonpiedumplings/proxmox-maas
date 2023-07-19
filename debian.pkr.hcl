@@ -44,6 +44,16 @@ variable "ovmfvars" {
   default = "/usr/share/OVMF/OVMF_VARS.fd"
 }
 
+var "user" {
+  type = string
+  default = "test"
+}
+
+var "password" {
+  type = string
+  default = test
+}
+
 source "qemu" "debian" {
   #boot_command     = ["<esc><wait>", "auto <wait>", "console-keymaps-at/keymap=us <wait>", "console-setup/ask_detect=false <wait>", "debconf/frontend=noninteractive <wait>", "debian-installer=en_US <wait>", "fb=false <wait>", "install <wait>", "kbd-chooser/method=us <wait>", "keyboard-configuration/xkb-keymap=us <wait>", "locale=en_US <wait>", "netcfg/get_hostname=${var.name}${var.version} <wait>", "preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/${var.config_file} <wait>", "<enter><wait>"]
   boot_command = [
@@ -120,21 +130,40 @@ source "qemu" "debian" {
 
   ### DEBIAN DOES NOT HAVE SSH, ONLY PRESEED. How to make this work?   ####
   ssh_handshake_attempts = 1
-  ssh_password           = "test"
+  ssh_password           = "${var.password}"
   ssh_timeout            = "45m"
-  ssh_username           = "test"
+  ssh_username           = "${var.user}"
   ssh_wait_timeout       = "45m"
 }
 
 build {
   sources = ["source.qemu.debian"]
-  provisioner "shell" {
+  
+  /*provisioner "shell" {
     inline = [
-      "echo 'test'"
+      "apt update && apt install ansible"
     ]
     inline_shebang = "/bin/bash -e"
-
+  }*/
+  provisioner "file" {
+    destination = "/tmp/"
+    sources = [
+      "${path.root}/scripts/shell/install-ansible.sh"
+    ]
   }
+  provisioner "shell" {
+    #environment_vars  = ["HOME_DIR=/home/ubuntu", "http_proxy=${var.http_proxy}", "https_proxy=${var.https_proxy}", "no_proxy=${var.no_proxy}"]
+    execute_command   = "echo '${var.password}' | sudo -S -E sh -eux '{{ .Path }}'"
+    expect_disconnect = true
+    scripts           = ["${path.root}/scripts/shell/install-ansible.sh"]
+  }
+
+  /*provisioner "ansible-local" {
+    command = "ansible-playbook" is the default
+    command = "echo 'test' | sudo -S ansible-playbook"
+    playbook_file = "./playbook.yml"
+    extra_arguments = ["--extra-vars", "'username=${var.username}'"]
+  }*/
 
   ### OLD PACKER MAAS UBUNTU CONFIGS ##
   /*provisioner "file" {
@@ -146,15 +175,7 @@ build {
       "${path.root}/packages/custom-packages.tar.gz"
     ]
   }
-
   
-  provisioner "shell" {
-    environment_vars  = ["HOME_DIR=/home/ubuntu", "http_proxy=${var.http_proxy}", "https_proxy=${var.https_proxy}", "no_proxy=${var.no_proxy}"]
-    execute_command   = "echo 'ubuntu' | {{ .Vars }} sudo -S -E sh -eux '{{ .Path }}'"
-    expect_disconnect = true
-    scripts           = ["${path.root}/scripts/curtin.sh", "${path.root}/scripts/networking.sh", "${path.root}/scripts/cleanup.sh"]
-  }
-
   */
 
   post-processor "shell-local" {
@@ -164,16 +185,13 @@ build {
       "IMG_FMT=raw",
       "ROOT_PARTITION=2",
       "OUTPUT=${var.debian_filename}",
-      "source ./scripts/fuse-nbd",
-      "source ./scripts/fuse-tar-root"
+      "source ./scripts/shell-local/fuse-nbd",
+      "source ./scripts/shell-local/fuse-tar-root"
     ]
     inline_shebang = "/bin/bash -e"
   }
   ###
 
-  /*provisioner "ansible-local" {
-    playbook_file = "./playbook.yml"
-    extra_arguments = ["--extra-vars", "'username=${var.username}'"]
-  }*/
+  
 }
 
