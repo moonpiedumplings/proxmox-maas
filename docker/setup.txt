@@ -1,0 +1,11 @@
+Prerequisites (to create the image)
+
+    A machine running Ubuntu 18.04+ with the ability to run KVM virtual machines.
+    qemu-utils, libnbd-bin, nbdkit and fuse2fs
+    qemu-system
+    ovmf
+    cloud-image-utils
+    Packer, v1.7.0 or newer
+
+
+Docker needs to run with --device /dev/kvm or something like that for qemu kvm to work. Or --privileged.

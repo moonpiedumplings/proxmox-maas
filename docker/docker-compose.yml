@@ -1,0 +1,11 @@
+version: '3'
+services:
+      packer:
+              build: .
+              privileged: true
+              restart: no
+              volumes:
+                - ../:/proxmox-maas
+              entrypoint: ["/proxmox-maas/docker/build.sh"]
+
+              
