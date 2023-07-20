@@ -6,6 +6,8 @@ services:
               restart: no
               volumes:
                 - ../:/proxmox-maas
+              environment:
+                - SAMPLE_ENVIRONMENT_VARIABLE=1 # Might use, might not. We'll see.
               entrypoint: ["/proxmox-maas/docker/build.sh"]
 
               

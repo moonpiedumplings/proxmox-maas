@@ -14,12 +14,30 @@ variable "debian_filename" {
   description = "The filename of the tarball to produce"
 }
 
+variable "iso_url" {
+  type = string
+  #default = "https://cdimage.debian.org/cdimage/archive/11.7.0/amd64/iso-cd/debian-11.7.0-amd64-netinst.iso"
+  default = "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.0.0-amd64-netinst.iso"
+}
+
+variable "iso_name" {
+  type = string
+  #default = "debian-11.7.0-amd64-netinst.iso"
+  default = "debian-12.0.0-amd64-netinst.iso"
+}
+
+variable "iso_checksums" {
+  type = string
+  #default = "https://cdimage.debian.org/cdimage/archive/11.7.0/amd64/iso-cd/SHA256SUMS"
+  default = "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/SHA256SUMS"
+}
+
 variable "name" {
   type    = string
   default = "debian"
 }
 
-variable "version" {
+variable "debian_version" {
   type    = string
   default = "11"
 }
@@ -63,7 +81,7 @@ source "qemu" "debian" {
   cpus            = "2"
   disk_size       = "12G"
   format          = "raw"
-  headless        = "true"
+  headless        = "false"
 
   #http_directory  = "http"
   http_content = {
@@ -79,27 +97,11 @@ source "qemu" "debian" {
 
   /* Debian base netinstall */
 
-  iso_checksum = "file:https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/SHA256SUMS"
-  iso_target_path = "packer_cache/debian-12.0.0-amd64-netinst.iso"
-  iso_url = "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.0.0-amd64-netinst.iso"
-
-  /* Debian XFCE iso 
-
-  iso_checksum    = "1519dc1461910bcb5a91709d115309d5bf4c2225920e227e56cf28b29552371e"
-  iso_target_path = "packer_cache/debian-xfce.iso"
-  iso_url         = "https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/debian-live-12.0.0-amd64-xfce.iso"
-
-  */
-
-  
-
-  /* Ubuntu config 
-  iso_checksum    = "file:http://releases.ubuntu.com/jammy/SHA256SUMS"
-  iso_target_path = "packer_cache/ubuntu.iso"
-  iso_url         = "https://releases.ubuntu.com/jammy/ubuntu-22.04.2-live-server-amd64.iso"*/
+  iso_checksum = "file:${var.iso_checksums}"
+  iso_target_path = "packer_cache/${var.iso_name}"
+  iso_url = "${var.iso_url}"
 
 
-  ###
   # output_directory = "./output" # isn't doing anything
   memory          = 2048
   net_device       = "virtio-net"
@@ -128,7 +130,7 @@ source "qemu" "debian" {
     #Dunno what this is right now.
     #["-drive", "file=seeds-flat.iso,format=raw,cache=none,if=none,id=drive1,readonly=on"],
 
-    ["-drive", "file=packer_cache/debian-12.0.0-amd64-netinst.iso,if=none,id=cdrom0,media=cdrom"]
+    ["-drive", "file=packer_cache/${var.iso_name},if=none,id=cdrom0,media=cdrom"]
   ]
   shutdown_command       = "echo 'test' | sudo -S shutdown -P now"
 
@@ -159,15 +161,19 @@ build {
     #environment_vars  = ["HOME_DIR=/home/ubuntu", "http_proxy=${var.http_proxy}", "https_proxy=${var.https_proxy}", "no_proxy=${var.no_proxy}"]
     execute_command   = "echo '${var.password}' | sudo -S -E sh -eux '{{ .Path }}'"
     expect_disconnect = true
-    scripts           = ["${path.root}/scripts/shell/install-ansible.sh"]
+    scripts           = ["${path.root}/scripts/shell/install-ansible.sh", "${path.root}/scripts/shell/passwordless-sudo.sh"]
+  }
+  provisioner "shell" {
+    execute_command = "sh -eux '{{ .Path}}'"
+    scripts = ["${path.root}/scripts/shell/groups.sh"]
   }
 
-  /*provisioner "ansible-local" {
-    command = "ansible-playbook" is the default
-    command = "echo 'test' | sudo -S ansible-playbook"
-    playbook_file = "./playbook.yml"
-    extra_arguments = ["--extra-vars", "'username=${var.username}'"]
-  }*/
+  provisioner "ansible-local" {
+    #command = "ansible-playbook" is the default
+    #command = "echo 'test' | sudo -S ansible-playbook"
+    playbook_file = "${path.root}/ansible/test-playbook.yml"
+    #extra_arguments = ["--extra-vars", "'username=${var.username}'"]
+  }
 
   ### OLD PACKER MAAS UBUNTU CONFIGS ##
   /*provisioner "file" {
