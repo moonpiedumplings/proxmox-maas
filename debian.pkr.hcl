@@ -16,20 +16,20 @@ variable "debian_filename" {
 
 variable "iso_url" {
   type = string
-  #default = "https://cdimage.debian.org/cdimage/archive/11.7.0/amd64/iso-cd/debian-11.7.0-amd64-netinst.iso"
-  default = "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.0.0-amd64-netinst.iso"
+  default = "https://cdimage.debian.org/cdimage/archive/11.7.0/amd64/iso-cd/debian-11.7.0-amd64-netinst.iso"
+  #default = "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.0.0-amd64-netinst.iso"
 }
 
 variable "iso_name" {
   type = string
-  #default = "debian-11.7.0-amd64-netinst.iso"
-  default = "debian-12.0.0-amd64-netinst.iso"
+  default = "debian-11.7.0-amd64-netinst.iso"
+  #default = "debian-12.0.0-amd64-netinst.iso"
 }
 
 variable "iso_checksums" {
   type = string
-  #default = "https://cdimage.debian.org/cdimage/archive/11.7.0/amd64/iso-cd/SHA256SUMS"
-  default = "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/SHA256SUMS"
+  default = "https://cdimage.debian.org/cdimage/archive/11.7.0/amd64/iso-cd/SHA256SUMS"
+  #default = "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/SHA256SUMS"
 }
 
 variable "name" {
@@ -69,14 +69,14 @@ variable "password" {
 
 source "qemu" "debian" {
   #boot_command     = ["<esc><wait>", "auto <wait>", "console-keymaps-at/keymap=us <wait>", "console-setup/ask_detect=false <wait>", "debconf/frontend=noninteractive <wait>", "debian-installer=en_US <wait>", "fb=false <wait>", "install <wait>", "kbd-chooser/method=us <wait>", "keyboard-configuration/xkb-keymap=us <wait>", "locale=en_US <wait>", "netcfg/get_hostname=${var.name}${var.version} <wait>", "preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/${var.config_file} <wait>", "<enter><wait>"]
-  boot_command = [
+  /*boot_command = [
     "<down>", "<down>",
     "<enter><wait>",
     "<down><down><down><down><down><enter>",
     "<wait1m>",
     "http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.txt<enter>"
 
-  ]
+  ]*/
   boot_wait       = "10s"
   cpus            = "2"
   disk_size       = "12G"
@@ -114,7 +114,7 @@ source "qemu" "debian" {
     nvme,serial=deadbeef1: debian won't even boot like this
     Now try USB? */
     
-    ["-device", "virtio-blk-pci,drive=drive0,bootindex=0"],
+    ["-device", "ide-hd,drive=drive0,bootindex=0"],
     ["-device", "virtio-blk-pci,drive=cdrom0,bootindex=1"],
     
 
