@@ -380,6 +380,7 @@ tasksel tasksel/first multiselect standard, ssh-server
 #d-i pkgsel/run_tasksel boolean false
 
 # Individual additional packages to install
+d-i pkgsel/include string python3
 #d-i pkgsel/include string openssh-server build-essential
 # Whether to upgrade packages after debootstrap.
 # Allowed values: none, safe-upgrade, full-upgrade

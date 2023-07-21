@@ -5,6 +5,10 @@ packer {
       version = "~> 1.0"
       source  = "github.com/hashicorp/qemu"
     }
+    ansible = {
+      version = ">= 1.1.0"
+      source  = "github.com/hashicorp/ansible"
+    }
   }
 }
 
@@ -81,7 +85,7 @@ source "qemu" "debian" {
   cpus            = "2"
   disk_size       = "12G"
   format          = "raw"
-  headless        = "false"
+  headless        = "true"
 
   #http_directory  = "http"
   http_content = {
@@ -134,7 +138,8 @@ source "qemu" "debian" {
   ]
   shutdown_command       = "echo 'test' | sudo -S shutdown -P now"
 
-  ### DEBIAN DOES NOT HAVE SSH, ONLY PRESEED. How to make this work?   ####
+  ### the ssh installi is for after the vm is installed, for the provisioning step  ####
+  #ssh_read_write_timeout = 5m
   ssh_handshake_attempts = 1
   ssh_password           = "${var.password}"
   ssh_timeout            = "45m"
@@ -151,29 +156,63 @@ build {
     ]
     inline_shebang = "/bin/bash -e"
   }*/
-  provisioner "file" {
+  /*provisioner "file" {
     destination = "/tmp/"
     sources = [
       "${path.root}/scripts/shell/install-ansible.sh"
     ]
-  }
+  }*/
+  /*
   provisioner "shell" {
     #environment_vars  = ["HOME_DIR=/home/ubuntu", "http_proxy=${var.http_proxy}", "https_proxy=${var.https_proxy}", "no_proxy=${var.no_proxy}"]
     execute_command   = "echo '${var.password}' | sudo -S -E sh -eux '{{ .Path }}'"
     expect_disconnect = true
-    scripts           = ["${path.root}/scripts/shell/install-ansible.sh", "${path.root}/scripts/shell/passwordless-sudo.sh"]
+    scripts           = [
+      #"${path.root}/scripts/shell/passwordless-sudo.sh", 
+      "passwordless-sudo.sh" = templatefile("${path.root}/scripts/shell/passwordless-sudo.sh.pkrtpl", {user = var.user})
+      ]
+  }*/
+  provisioner "shell" {
+    inline = [
+      "echo '${var.password}' | sudo -S -E python3 -c \"open('/etc/sudoers.d/99_sudo_include_file', 'w').write('${var.user} ALL=(ALL) NOPASSWD:ALL')\"",
+      #"echo '${var.password}' | sudo -S -E \"echo '${var.user} ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers.d/99_sudo_include_file\"",
+      "echo '${var.password}' | sudo -S -E visudo -cf /etc/sudoers.d/99_sudo_include_file"
+    ]
+    #inline_shebang = "echo '${var.password}' |  -S -E /bin/sh -e"
   }
   provisioner "shell" {
     execute_command = "sh -eux '{{ .Path}}'"
-    scripts = ["${path.root}/scripts/shell/groups.sh"]
+    scripts = [
+      "${path.root}/scripts/shell/groups.sh", 
+      #"${path.root}/scripts/shell/pipx-ansible.sh" # Pause this for now
+      ]
   }
 
+  /*
   provisioner "ansible-local" {
     #command = "ansible-playbook" is the default
     #command = "echo 'test' | sudo -S ansible-playbook"
-    playbook_file = "${path.root}/ansible/test-playbook.yml"
+    playbook_file = "${path.root}/ansible/proxmox.yml"
     #extra_arguments = ["--extra-vars", "'username=${var.username}'"]
   }
+  */
+
+  provisioner "ansible" {
+    user = "${var.user}"
+    playbook_file = "${path.root}/ansible/proxmox.yml"
+    extra_arguments  = [
+      #"-e ansible_ssh_pass=${var.password}"
+       "--scp-extra-args", "'-O'"
+      ]
+  }
+
+  /*
+  provisioner "shell" {
+    execute_command = "sudo -E sh -eux '{{ .Path }}'"
+    scripts = ["${path.root/scripts/shell/reboot.sh}"]
+    expect_disconnect = true
+  }
+  */
 
   ### OLD PACKER MAAS UBUNTU CONFIGS ##
   /*provisioner "file" {
