@@ -1,0 +1,8 @@
+# Lae proxmox with debian 12, gets a fork from github
+# NOTE: this uses something that will be deprecated in ansible 2.18, maybe pin ansible version? pipx would let me do that.
+- src: https://github.com/lexxxel/ansible-role-proxmox
+  name: lae.proxmox
+
+
+# Gets geerlingguy.ntp from ansible galaxy
+- src: geerlingguy.ntp

@@ -3,15 +3,6 @@
   #connection: local
   become: true
   tasks:
-    # - name: proxmox add repos
-    #   copy:
-    #     dest: /etc/apt/sources.list.d/pve-install-repo.list
-    #     content: 'deb [arch=amd64] http://download.proxmox.com/debian/pve bookworm pve-no-subscription'
-    # - name: Proxmox get gpg key
-    #   get_url: 
-    #     url: https://enterprise.proxmox.com/debian/proxmox-release-bookworm.gpg
-    #     dest: /etc/apt/trusted.gpg.d/proxmox-release-bookworm.gpg
-    #     checksum: sha512:7da6fe34168adc6e479327ba517796d4702fa2f8b4f0a9833f5ea6e6b48f6507a6da403a274fe201595edc86a84463d50383d07f64bdde2e3658108db7d6dc87
     - name: Proxmox deb822 repo
       deb822_repository: 
         name: proxmox
@@ -25,11 +16,34 @@
       apt:
         update_cache: true
         upgrade: full
-    - name: install pve kernel
-      apt:
-        name: pve-kernel-6.2
-        state: present
+    #- name: install pve kernel
+    #  apt:
+    #    name: pve-kernel-6.2
+    #    state: present
+    # - name: Remove currently installed kernel
+    #   apt:
+    #     name: linux-image-amd64 'linux-image-6.1*' os-prober
+    #     state: absent
+    # - name: update grub
+    #   shell: |
+    #     echo $USER \
+    #     sudo update-grub
+    # - name: Reboot the machine
+    #   reboot: 
+    - name: Reboot the machine
+      shell: "sleep 5 && reboot"
+      async: 1
+      poll: 0
+    - name: Wait for the machine to come back online
+      wait_for_connection:
+        connect_timeout: 60
+        sleep: 5
+        delay: 5
+        timeout: 300
     - name: Install package
+      # apt:
+      #   name: proxmox-ve postfix open-iscsi
+      #   state: present
       apt:
         name: git
         state: present

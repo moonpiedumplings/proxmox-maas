@@ -21,13 +21,13 @@ variable "debian_filename" {
 variable "iso_url" {
   type = string
   #default = "https://cdimage.debian.org/cdimage/archive/11.7.0/amd64/iso-cd/debian-11.7.0-amd64-netinst.iso"
-  default = "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.0.0-amd64-netinst.iso"
+  default = "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.1.0-amd64-netinst.iso"
 }
 
 variable "iso_name" {
   type = string
   #default = "debian-11.7.0-amd64-netinst.iso"
-  default = "debian-12.0.0-amd64-netinst.iso"
+  default = "debian-12.1.0-amd64-netinst.iso"
 }
 
 variable "iso_checksums" {
@@ -139,12 +139,14 @@ source "qemu" "debian" {
   shutdown_command       = "echo 'test' | sudo -S shutdown -P now"
 
   ### the ssh installi is for after the vm is installed, for the provisioning step  ####
-  #ssh_read_write_timeout = 5m
+
   ssh_handshake_attempts = 1
   ssh_password           = "${var.password}"
   ssh_timeout            = "45m"
   ssh_username           = "${var.user}"
   ssh_wait_timeout       = "45m"
+  ssh_read_write_timeout = "5m"
+
 }
 
 build {
@@ -199,7 +201,7 @@ build {
 
   provisioner "ansible" {
     user = "${var.user}"
-    playbook_file = "${path.root}/ansible/proxmox.yml"
+    playbook_file = "${path.root}/ansible/lae-proxmox.yml"
     extra_arguments  = [
       #"-e ansible_ssh_pass=${var.password}"
        "--scp-extra-args", "'-O'"
