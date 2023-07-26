@@ -14,7 +14,7 @@ packer {
 
 variable "debian_filename" {
   type        = string
-  default     = "debian.tar.gz"
+  default     = "proxmox.tar.gz"
   description = "The filename of the tarball to produce"
 }
 
