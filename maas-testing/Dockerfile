@@ -1,4 +1,4 @@
-from ubuntu:kinetic
+from docker.io/ubuntu:jammy
 
 RUN apt-get -y update \
 && apt-get -y install systemd \
